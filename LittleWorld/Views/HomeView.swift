@@ -48,6 +48,7 @@ struct HomeView: View {
                     }
                     .frame(width: min(proxy.size.width - 48, isLandscape ? 420 : 320))
                     .frame(width: proxy.size.width, alignment: .center)
+                    .offset(x: isLandscape ? 0 : -20)
                     .padding(.bottom, max(proxy.safeAreaInsets.bottom + 16, 32))
                 }
             }
