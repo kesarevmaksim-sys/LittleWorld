@@ -103,6 +103,7 @@ struct CatalogView: View {
     @State private var selectedPower: GameCard?
     @State private var selectedRace: GameCard?
     @State private var pairWasAdded = false
+    @State private var isTablePresented = false
 
     var body: some View {
         GeometryReader { proxy in
@@ -132,17 +133,18 @@ struct CatalogView: View {
                 }
 
                 if selectedPower != nil && selectedRace != nil {
+                    let isLandscape = proxy.size.width > proxy.size.height
                     Button("Добавить пару на стол") {
                         table.add(power: selectedPower!, race: selectedRace!)
                         pairWasAdded = true
                     }
-                    .font(.headline)
+                    .font(isLandscape ? .subheadline.weight(.semibold) : .headline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 13)
-                    .background(.orange, in: Capsule())
+                    .padding(.horizontal, isLandscape ? 15 : 20)
+                    .padding(.vertical, isLandscape ? 9 : 13)
+                    .background(.orange.opacity(0.5), in: Capsule())
                     .shadow(radius: 5)
-                    .padding(.bottom, 12)
+                    .padding(.bottom, proxy.safeAreaInsets.bottom + (isLandscape ? 8 : 12))
                 }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
@@ -182,8 +184,15 @@ struct CatalogView: View {
             }
             .presentationDetents([.height(210)])
         }
+        .navigationDestination(isPresented: $isTablePresented) {
+            TableView()
+                .environmentObject(table)
+        }
         .alert("Пара добавлена на стол", isPresented: $pairWasAdded) {
-            Button("Хорошо", role: .cancel) { }
+            Button("Перейти на Стол") {
+                isTablePresented = true
+            }
+            Button("Остаться в Каталоге", role: .cancel) { }
         } message: {
             Text("\(selectedPower?.name ?? "") + \(selectedRace?.name ?? "")")
         }
