@@ -6,6 +6,11 @@ struct TableView: View {
     @State private var dragOffset: CGFloat = 0
     @State private var readingCard: GameCard?
     @State private var isCarouselAnimating = false
+    @State private var isPairsListPresented = false
+
+    private var currentPair: CardPair? {
+        table.pairs.indices.contains(page) ? table.pairs[page] : table.pairs.last
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -54,22 +59,31 @@ struct TableView: View {
                                 finishCarouselSwipe(gesture, width: proxy.size.width)
                             }
                     )
-                    .overlay(alignment: .topTrailing) {
-                        Button(role: .destructive) {
-                            table.remove(pair)
-                            page = min(page, max(table.pairs.count - 1, 0))
-                        } label: {
-                            Image(systemName: "trash.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(.white, .red)
-                        }
-                        .padding()
-                    }
                 }
+
             }
         }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if !table.pairs.isEmpty {
+                    Button(role: .destructive, action: removeCurrentPair) {
+                        Image(systemName: "trash")
+                            .font(.headline)
+                            .foregroundStyle(.red)
+                    }
+                    .accessibilityLabel("Удалить текущую пару")
+
+                    Button {
+                        isPairsListPresented = true
+                    } label: {
+                        Image(systemName: "list.bullet")
+                            .font(.headline)
+                    }
+                    .accessibilityLabel("Показать пары на Столе")
+                }
+
                 NavigationLink {
                     CatalogView()
                         .environmentObject(table)
@@ -80,9 +94,14 @@ struct TableView: View {
                 .accessibilityLabel("Перейти в Каталог")
             }
         }
+        .sheet(isPresented: $isPairsListPresented) {
+            TablePairsSheet(pairs: table.pairs)
+                .presentationDetents([.medium, .large])
+        }
         .sheet(item: $readingCard) { card in
             CardReadingView(card: card)
         }
+        .tint(.orange)
     }
 
     private func neighboringIndex(for offset: CGFloat) -> Int {
@@ -90,6 +109,12 @@ struct TableView: View {
         return offset < 0
             ? (page + 1) % table.pairs.count
             : (page - 1 + table.pairs.count) % table.pairs.count
+    }
+
+    private func removeCurrentPair() {
+        guard let currentPair else { return }
+        table.remove(currentPair)
+        page = min(page, max(table.pairs.count - 1, 0))
     }
 
     private func previewOffset(width: CGFloat) -> CGFloat {
