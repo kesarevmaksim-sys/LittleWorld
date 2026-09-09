@@ -7,7 +7,7 @@ struct CatalogView: View {
     @State private var isSearchPresented = false
     @State private var selectedPower: GameCard?
     @State private var selectedRace: GameCard?
-    @State private var pairWasAdded = false
+    @State private var isPairAddedToastVisible = false
     @State private var isTablePresented = false
 
     var body: some View {
@@ -41,7 +41,7 @@ struct CatalogView: View {
                     let isLandscape = proxy.size.width > proxy.size.height
                     Button("Добавить пару на стол") {
                         table.add(power: selectedPower!, race: selectedRace!)
-                        pairWasAdded = true
+                        showPairAddedToast()
                     }
                     .font(isLandscape ? .subheadline.weight(.semibold) : .headline)
                     .foregroundStyle(.white)
@@ -51,11 +51,22 @@ struct CatalogView: View {
                     .shadow(radius: 5)
                     .padding(.bottom, proxy.safeAreaInsets.bottom + (isLandscape ? 30 : 12))
                 }
+
+                if isPairAddedToastVisible {
+                    Label("Пара добавлена на Стол", systemImage: "checkmark.circle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.black.opacity(0.72), in: Capsule())
+                        .shadow(radius: 6)
+                        .padding(.bottom, proxy.safeAreaInsets.bottom + (proxy.size.width > proxy.size.height ? 76 : 84))
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        .zIndex(1)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .navigationTitle("Каталог")
-        .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
@@ -81,6 +92,16 @@ struct CatalogView: View {
                 }
                 .accessibilityLabel("Поиск карточек")
             }
+
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    isTablePresented = true
+                } label: {
+                    Image(systemName: "square.grid.2x2.fill")
+                        .font(.headline)
+                }
+                .accessibilityLabel("Перейти на Стол")
+            }
         }
         .sheet(isPresented: $isSearchPresented) {
             CatalogSearchSheet(searchText: $draftSearchText) { query in
@@ -93,14 +114,6 @@ struct CatalogView: View {
             TableView()
                 .environmentObject(table)
         }
-        .alert("Пара добавлена на стол", isPresented: $pairWasAdded) {
-            Button("Перейти на Стол") {
-                isTablePresented = true
-            }
-            Button("Остаться в Каталоге", role: .cancel) { }
-        } message: {
-            Text("\(selectedPower?.name ?? "") + \(selectedRace?.name ?? "")")
-        }
         .tint(.orange)
     }
 
@@ -110,5 +123,17 @@ struct CatalogView: View {
 
     private func toggleRace(_ card: GameCard) {
         selectedRace = selectedRace?.id == card.id ? nil : card
+    }
+
+    private func showPairAddedToast() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+            isPairAddedToastVisible = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                isPairAddedToastVisible = false
+            }
+        }
     }
 }

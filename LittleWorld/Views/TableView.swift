@@ -68,8 +68,18 @@ struct TableView: View {
                 }
             }
         }
-        .navigationTitle("Стол")
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                NavigationLink {
+                    CatalogView()
+                        .environmentObject(table)
+                } label: {
+                    Image(systemName: "rectangle.stack.fill")
+                        .font(.headline)
+                }
+                .accessibilityLabel("Перейти в Каталог")
+            }
+        }
         .sheet(item: $readingCard) { card in
             CardReadingView(card: card)
         }
