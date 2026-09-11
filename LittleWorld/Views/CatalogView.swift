@@ -8,6 +8,7 @@ struct CatalogView: View {
     @State private var selectedPower: GameCard?
     @State private var selectedRace: GameCard?
     @State private var isPairAddedToastVisible = false
+    @State private var validationMessage: String?
     @State private var isTablePresented = false
 
     var body: some View {
@@ -40,8 +41,7 @@ struct CatalogView: View {
                 if selectedPower != nil && selectedRace != nil {
                     let isLandscape = proxy.size.width > proxy.size.height
                     Button("Добавить пару на стол") {
-                        table.add(power: selectedPower!, race: selectedRace!)
-                        showPairAddedToast()
+                        addSelectedPair()
                     }
                     .font(isLandscape ? .subheadline.weight(.semibold) : .headline)
                     .foregroundStyle(.white)
@@ -60,6 +60,21 @@ struct CatalogView: View {
                         .padding(.vertical, 10)
                         .background(.black.opacity(0.72), in: Capsule())
                         .shadow(radius: 6)
+                        .padding(.bottom, proxy.safeAreaInsets.bottom + (proxy.size.width > proxy.size.height ? 76 : 84))
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        .zIndex(1)
+                }
+
+                if let validationMessage {
+                    Label(validationMessage, systemImage: "exclamationmark.triangle.fill")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(.red.opacity(0.85), in: Capsule())
+                        .shadow(radius: 6)
+                        .padding(.horizontal, 20)
                         .padding(.bottom, proxy.safeAreaInsets.bottom + (proxy.size.width > proxy.size.height ? 76 : 84))
                         .transition(.opacity.combined(with: .scale(scale: 0.9)))
                         .zIndex(1)
@@ -125,7 +140,34 @@ struct CatalogView: View {
         selectedRace = selectedRace?.id == card.id ? nil : card
     }
 
+    private func addSelectedPair() {
+        guard let selectedPower, let selectedRace else { return }
+
+        let hasPower = table.pairs.contains { $0.power.id == selectedPower.id }
+        let hasRace = table.pairs.contains { $0.race.id == selectedRace.id }
+
+        if hasPower || hasRace {
+            let message: String
+            switch (hasPower, hasRace) {
+            case (true, true):
+                message = "Карточки с этим народом и способностью уже есть на Столе"
+            case (true, false):
+                message = "Карточка с этой способностью уже есть на Столе"
+            case (false, true):
+                message = "Карточка с этим народом уже есть на Столе"
+            case (false, false):
+                return
+            }
+            showValidation(message)
+            return
+        }
+
+        table.add(power: selectedPower, race: selectedRace)
+        showPairAddedToast()
+    }
+
     private func showPairAddedToast() {
+        validationMessage = nil
         withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
             isPairAddedToastVisible = true
         }
@@ -133,6 +175,19 @@ struct CatalogView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation(.easeOut(duration: 0.2)) {
                 isPairAddedToastVisible = false
+            }
+        }
+    }
+
+    private func showValidation(_ message: String) {
+        isPairAddedToastVisible = false
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+            validationMessage = message
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                validationMessage = nil
             }
         }
     }

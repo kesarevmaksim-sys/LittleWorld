@@ -14,13 +14,26 @@ struct CardCatalog: View {
         searchText.isEmpty ? cards : cards.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
 
+    private var titleColor: Color {
+        kind == .powers
+            ? Color(red: 0.96, green: 0.65, blue: 0.14)
+            : Color(red: 0.14, green: 0.48, blue: 0.44)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            Text(kind.rawValue)
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
+            HStack {
+                Text(kind.rawValue)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(titleColor.opacity(0.72), in: Capsule())
+
+                Spacer()
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
 
             if filteredCards.isEmpty {
                 ContentUnavailableView.search(text: searchText)
